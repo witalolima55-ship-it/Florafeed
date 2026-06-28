@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>FloraFeed — Seu jardim digital</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--moss:#2D5016;--leaf:#5A8A2B;--lime:#7CB342;--sage:#B8D4A0;--cream:#F9F5F0;--parchment:#EDE8DF;--soil:#8B6914;--white:#FFFFFF;--text:#1C2B0E;--muted:#6B7B5A;--red:#E8424A;--gold:#F59E0B}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--text);min-height:100vh;overflow-x:hidden}
+.bg-nature{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 80% 60% at 10% 20%,rgba(92,140,43,.07) 0%,transparent 60%),radial-gradient(ellipse 60% 80% at 90% 80%,rgba(45,80,22,.09) 0%,transparent 60%),var(--cream)}
+/* LOADING */
+#loading-screen{position:fixed;inset:0;z-index:999;background:linear-gradient(135deg,#1a3a0a,var(--moss));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+#loading-screen.hidden{display:none}
+.loading-logo{font-size:56px;animation:float 2s ease-in-out infinite}
+.loading-title{font-family:'Playfair Display',serif;font-size:28px;color:#fff;font-weight:700}
+.loading-sub{font-size:14px;color:rgba(255,255,255,.7)}
+.loading-bar{width:200px;height:4px;background:rgba(255,255,255,.2);border-radius:4px;overflow:hidden;margin-top:8px}
+.loading-fill{height:100%;background:#fff;border-radius:4px;animation:loadfill 1.5s ease forwards}
+@keyframes loadfill{from{width:0%}to{width:100%}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+/* AUTH */
+#auth-screen{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(22,38,10,.97),rgba(45,80,22,.92),rgba(90,138,43,.88));backdrop-filter:blur(6px)}
+#auth-screen.hidden{display:none}
+.auth-card{background:var(--white);border-radius:28px;padding:48px 40px;width:100%;max-width:420px;box-shadow:0 40px 100px rgba(0,0,0,.45);position:relative;overflow:hidden}
+.auth-card::before{content:'';position:absolute;top:-80px;right:-80px;width:220px;height:220px;background:radial-gradient(circle,rgba(90,138,43,.12),transparent 70%);border-radius:50%}
+.auth-logo{text-align:center;margin-bottom:36px}
+.auth-logo .leaf-icon{font-size:52px;display:block;margin-bottom:10px;animation:float 3s ease-in-out infinite}
+.auth-logo h1{font-family:'Playfair Display',serif;font-size:34px;font-weight:700;color:var(--moss);letter-spacing:-1px}
+.auth-logo p{font-size:13px;color:var(--muted);margin-top:5px;font-style:italic}
+.auth-tabs{display:flex;border-bottom:2px solid var(--parchment);margin-bottom:28px}
+.auth-tab{flex:1;padding:11px;text-align:center;font-size:14px;font-weight:600;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s;background:none;border-top:none;border-left:none;border-right:none}
+.auth-tab.active{color:var(--moss);border-bottom-color:var(--leaf)}
+.auth-form{display:flex;flex-direction:column;gap:16px}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-group label{font-size:11px;font-weight:700;color:var(--moss);text-transform:uppercase;letter-spacing:.8px}
+.form-group input,.form-group select{border:1.5px solid var(--sage);border-radius:12px;padding:13px 14px;font-size:14px;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s,box-shadow .2s;background:var(--cream);width:100%;color:var(--text)}
+.form-group input:focus,.form-group select:focus{border-color:var(--leaf);box-shadow:0 0 0 3px rgba(90,138,43,.12)}
+.pass-wrap{position:relative}
+.pass-wrap input{padding-right:46px}
+.pass-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;color:var(--muted)}
+.eye-icon{width:20px;height:20px;display:block}
+.btn-primary{background:linear-gradient(135deg,var(--moss),var(--leaf));color:var(--white);border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;transition:opacity .2s,transform .1s;font-family:'Inter',sans-serif;margin-top:4px;width:100%;box-shadow:0 4px 16px rgba(45,80,22,.35)}
+.btn-primary:hover{opacity:.92}
+.btn-primary:active{transform:scale(.98)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.auth-error{background:#FEE;border:1px solid #F99;border-radius:10px;padding:10px 14px;font-size:13px;color:#C33;display:none}
+.auth-error.show{display:block}
+/* APP */
+#app{display:none;min-height:100vh;position:relative;z-index:1}
+#app.visible{display:block}
+/* NAVBAR */
+.navbar{position:sticky;top:0;z-index:50;background:rgba(249,245,240,.97);backdrop-filter:blur(16px);border-bottom:1px solid rgba(90,138,43,.15);padding:0 14px;display:flex;align-items:center;justify-content:space-between;height:56px}
+.nav-left{display:flex;align-items:center;gap:10px}
+.nav-brand{display:flex;align-items:center;gap:7px;font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--moss)}
+.nav-brand span{font-size:22px}
+.nav-right{display:flex;align-items:center;gap:6px}
+.btn-post{background:linear-gradient(135deg,var(--moss),var(--leaf));color:var(--white);border:none;border-radius:22px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:'Inter',sans-serif;box-shadow:0 3px 10px rgba(45,80,22,.28);transition:all .2s}
+.btn-post:hover{opacity:.88;transform:translateY(-1px)}
+.btn-icon{background:none;border:none;cursor:pointer;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;position:relative;transition:background .2s}
+.btn-icon:hover{background:rgba(90,138,43,.1)}
+.btn-hamburger{background:none;border:none;cursor:pointer;width:38px;height:38px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:0;transition:background .2s}
+.btn-hamburger:hover{background:rgba(90,138,43,.1)}
+.btn-hamburger .bar{width:20px;height:2px;background:var(--moss);border-radius:2px}
+.notif-badge{position:absolute;top:4px;right:4px;background:var(--red);color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:1px 5px;min-width:16px;text-align:center;display:none;border:2px solid var(--cream)}
+.notif-badge.show{display:block}
+/* SIDEBAR */
+.sidebar-overlay{position:fixed;inset:0;z-index:200;background:rgba(28,43,14,.55);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .25s}
+.sidebar-overlay.open{opacity:1;pointer-events:all}
+.sidebar{position:fixed;top:0;left:-340px;width:320px;max-width:90vw;height:100dvh;z-index:201;overflow-y:auto;background:var(--white);box-shadow:8px 0 48px rgba(28,43,14,.22);transition:left .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
+.sidebar.open{left:0}
+.sidebar-header{background:linear-gradient(160deg,var(--moss),var(--leaf));padding:36px 24px 28px;position:relative}
+.sidebar-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.2);border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;color:var(--white);font-size:16px;display:flex;align-items:center;justify-content:center}
+.sidebar-close:hover{background:rgba(255,255,255,.35)}
+.sidebar-profile{display:flex;flex-direction:column;align-items:center;gap:10px}
+.profile-avatar{width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:700;color:var(--white);border:3px solid rgba(255,255,255,.45);user-select:none}
+.profile-name{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--white);text-align:center}
+.profile-email{font-size:12px;color:rgba(255,255,255,.72);text-align:center}
+.profile-badges{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:4px}
+.badge-pill{background:rgba(255,255,255,.2);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;color:#fff}
+.sidebar-tabs{display:flex;border-bottom:1px solid var(--parchment);overflow-x:auto;scrollbar-width:none}
+.sidebar-tabs::-webkit-scrollbar{display:none}
+.sidebar-tab{flex:1;min-width:64px;padding:11px 4px;font-size:11px;font-weight:700;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;text-align:center;transition:all .2s;font-family:'Inter',sans-serif;margin-bottom:-1px}
+.sidebar-tab.active{color:var(--moss);border-bottom-color:var(--leaf)}
+.sidebar-content{flex:1;overflow-y:auto}
+.sidebar-panel{display:none;padding:20px}
+.sidebar-panel.active{display:block}
+.info-row{display:flex;flex-direction:column;gap:4px;padding:13px 0;border-bottom:1px solid var(--parchment)}
+.info-row:last-child{border-bottom:none}
+.info-label{font-size:10px;font-weight:700;color:var(--moss);text-transform:uppercase;letter-spacing:.8px}
+.info-value{font-size:14px;color:var(--text);font-weight:500}
+.info-muted{font-size:12px;color:var(--muted);margin-top:2px}
+.tutorial-step{display:flex;gap:14px;margin-bottom:20px}
+.step-num{width:28px;height:28px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,var(--moss),var(--leaf));color:var(--white);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.step-body h4{font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px}
+.step-body p{font-size:13px;color:var(--muted);line-height:1.55}
+.credit-card{background:var(--cream);border-radius:14px;padding:18px;margin-bottom:12px;text-align:center}
+.credit-card .ci{font-size:28px;margin-bottom:6px}
+.credit-card h4{font-family:'Playfair Display',serif;font-size:15px;color:var(--moss);margin-bottom:4px}
+.credit-card p{font-size:13px;color:var(--muted);line-height:1.5}
+.credit-tag{display:inline-block;margin-top:7px;background:rgba(45,80,22,.1);border-radius:20px;padding:3px 12px;font-size:11px;font-weight:600;color:var(--moss)}
+.sidebar-logout{padding:16px 20px;border-top:1px solid var(--parchment)}
+.btn-logout{width:100%;background:none;border:1.5px solid #E88;border-radius:12px;padding:12px;font-size:14px;font-weight:600;color:#C33;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
+.btn-logout:hover{background:#FEE}
+/* WEATHER */
+.weather-banner{padding:12px 16px;display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#0EA5E9,#38BDF8)}
+.weather-banner.hot{background:linear-gradient(135deg,#F59E0B,#FBBF24)}
+.weather-banner.night{background:linear-gradient(135deg,#4338CA,#6366F1)}
+.weather-icon{font-size:26px}
+.weather-text strong{font-size:14px;font-weight:700;color:#fff;display:block}
+.weather-text span{font-size:12px;color:rgba(255,255,255,.85)}
+/* STORIES */
+.stories-section{background:var(--white);border-bottom:8px solid var(--cream);padding:14px 0 14px 14px}
+.stories-scroll{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding-right:14px}
+.stories-scroll::-webkit-scrollbar{display:none}
+.story-item{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;cursor:pointer}
+.story-ring{width:62px;height:62px;border-radius:50%;padding:2.5px;background:linear-gradient(135deg,var(--moss),var(--lime),var(--leaf));transition:transform .2s}
+.story-ring:hover{transform:scale(1.07)}
+.story-ring.seen{background:#ccc}
+.story-ring.add-ring{background:var(--parchment)}
+.story-inner{width:100%;height:100%;border-radius:50%;border:2.5px solid var(--white);background:linear-gradient(135deg,var(--sage),var(--parchment));display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--moss);overflow:hidden}
+.story-inner img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.story-label{font-size:10px;color:var(--text);font-weight:500;max-width:64px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Story Viewer */
+.sv-overlay{position:fixed;inset:0;z-index:500;background:#000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.sv-overlay.open{opacity:1;pointer-events:all}
+.sv-box{position:relative;width:100%;max-width:420px;height:100dvh;background:#111;display:flex;flex-direction:column}
+.sv-bars{display:flex;gap:3px;padding:12px 12px 0;z-index:2}
+.sv-seg{flex:1;height:3px;background:rgba(255,255,255,.3);border-radius:2px;overflow:hidden}
+.sv-fill{height:100%;background:#fff;width:0%;transition:width linear}
+.sv-head{display:flex;align-items:center;gap:10px;padding:10px 14px;z-index:2}
+.sv-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--moss),var(--lime));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff}
+.sv-name{font-size:14px;font-weight:600;color:#fff;flex:1}
+.sv-time{font-size:11px;color:rgba(255,255,255,.6)}
+.sv-close{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:4px}
+.sv-img{flex:1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.sv-img img{width:100%;height:100%;object-fit:contain}
+.sv-no-img{font-size:80px;text-align:center}
+.sv-caption{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.7));padding:40px 20px 20px;color:#fff;font-size:14px;line-height:1.5}
+.sv-tap-l{position:absolute;left:0;top:0;width:35%;height:100%;z-index:3;cursor:pointer}
+.sv-tap-r{position:absolute;right:0;top:0;width:35%;height:100%;z-index:3;cursor:pointer}
+/* CATEGORIES */
+.cat-section{background:var(--white);border-bottom:1px solid rgba(0,0,0,.06);padding:12px 0 12px 14px}
+.cat-scroll{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-right:14px}
+.cat-scroll::-webkit-scrollbar{display:none}
+.cat-btn{flex-shrink:0;background:var(--cream);border:1.5px solid var(--sage);border-radius:22px;padding:7px 16px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;white-space:nowrap}
+.cat-btn:hover,.cat-btn.active{background:var(--moss);border-color:var(--moss);color:#fff}
+/* RANKING */
+.ranking-section{background:var(--white);border-bottom:8px solid var(--cream);padding:16px}
+.ranking-title{font-size:13px;font-weight:700;color:var(--moss);margin-bottom:12px}
+.ranking-list{display:flex;flex-direction:column;gap:10px}
+.r-item{display:flex;align-items:center;gap:10px}
+.r-pos{width:22px;font-size:13px;font-weight:800;color:var(--muted);text-align:center;flex-shrink:0}
+.r-pos.g{color:var(--gold)}.r-pos.s{color:#9CA3AF}.r-pos.b{color:#B45309}
+.r-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--moss),var(--lime));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+.r-info{flex:1;min-width:0}
+.r-name{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.r-stat{font-size:11px;color:var(--muted);margin-top:1px}
+.r-medal{font-size:18px;flex-shrink:0}
+/* FEED */
+.main-content{max-width:540px;margin:0 auto;padding:0 0 80px}
+.feed-hero{position:relative;overflow:hidden;background:linear-gradient(160deg,#1a3a0a,var(--moss),var(--leaf));padding:30px 24px 26px;text-align:center}
+.feed-hero h2{font-family:'Playfair Display',serif;font-size:27px;font-weight:700;color:#fff;position:relative}
+.feed-hero p{font-size:13px;color:rgba(255,255,255,.75);margin-top:6px;position:relative}
+.feed-count{display:inline-block;margin-top:10px;position:relative;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:20px;padding:4px 14px;font-size:12px;font-weight:700;color:#fff}
+.feed-controls{padding:12px 14px 10px;background:var(--white);border-bottom:1px solid rgba(0,0,0,.06)}
+.search-wrap{position:relative;width:100%}
+.search-wrap input{width:100%;border:1.5px solid var(--sage);border-radius:28px;padding:10px 18px 10px 42px;font-size:14px;font-family:'Inter',sans-serif;outline:none;background:var(--cream)}
+.search-wrap input:focus{border-color:var(--leaf);box-shadow:0 0 0 3px rgba(90,138,43,.10)}
+.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none}
+/* CARD */
+.feed-list{display:flex;flex-direction:column;gap:0}
+.plant-card{background:var(--white);overflow:hidden;animation:cardIn .5s cubic-bezier(.22,1,.36,1) both;border-bottom:8px solid var(--cream)}
+@keyframes cardIn{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+.card-header{display:flex;align-items:center;gap:10px;padding:12px 14px 10px}
+.owner-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--moss),var(--lime));display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff;flex-shrink:0;box-shadow:0 0 0 2px #fff,0 0 0 4px var(--leaf)}
+.card-header-info{flex:1;min-width:0}
+.owner-name{font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.owner-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.card-menu-btn{background:none;border:none;cursor:pointer;padding:6px 8px;color:var(--muted);font-size:20px;border-radius:8px;letter-spacing:2px}
+.card-menu-btn:hover{background:var(--parchment)}
+.card-milestone{font-size:10px;font-weight:700;color:var(--gold);background:rgba(245,158,11,.1);border-radius:20px;padding:2px 8px;display:inline-flex;align-items:center;gap:3px;margin-bottom:3px}
+.card-img-wrap{position:relative;background:#e8ede4;overflow:hidden;cursor:pointer}
+.card-img-wrap img{width:100%;aspect-ratio:4/5;max-height:500px;object-fit:cover;display:block;transition:transform .4s}
+.card-img-wrap:hover img{transform:scale(1.012)}
+.heart-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0}
+.heart-overlay.pop{animation:hpop .7s ease forwards}
+@keyframes hpop{0%{opacity:0;transform:scale(.4)}25%{opacity:1;transform:scale(1.35)}65%{opacity:1;transform:scale(1)}100%{opacity:0}}
+.heart-overlay-icon{font-size:90px;filter:drop-shadow(0 4px 20px rgba(0,0,0,.5))}
+.card-no-photo{aspect-ratio:4/5;max-height:360px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:linear-gradient(160deg,#d4e8c0,#eee8de);font-size:52px}
+.card-no-photo span{font-size:13px;color:var(--muted);font-weight:500}
+.card-actions-row{display:flex;align-items:center;padding:6px 8px 2px}
+.like-group,.comment-group{display:flex;align-items:center;gap:4px}
+.like-btn-insta{background:none;border:none;cursor:pointer;padding:8px;display:flex;align-items:center;justify-content:center;border-radius:50%;-webkit-tap-highlight-color:transparent}
+.like-btn-insta:active{transform:scale(.8)}
+.like-btn-insta svg{width:27px;height:27px;transition:fill .15s,stroke .15s}
+.like-btn-insta:not(.liked) svg{fill:none;stroke:#1C2B0E;stroke-width:2}
+.like-btn-insta.liked svg{fill:#E8424A;stroke:#E8424A}
+@keyframes hburst{0%{transform:scale(1)}20%{transform:scale(1.55)}50%{transform:scale(.88)}75%{transform:scale(1.15)}100%{transform:scale(1)}}
+.heart-burst{animation:hburst .42s cubic-bezier(.36,.07,.19,.97) forwards}
+.action-count{font-size:14px;font-weight:700;color:var(--text);min-width:18px;line-height:1;user-select:none}
+.action-count.red{color:var(--red)}
+.comment-btn-insta{background:none;border:none;cursor:pointer;padding:8px;display:flex;align-items:center;justify-content:center;border-radius:50%;-webkit-tap-highlight-color:transparent}
+.comment-btn-insta svg{width:25px;height:25px;fill:none;stroke:#1C2B0E;stroke-width:2}
+.comment-btn-insta:active svg{stroke:var(--leaf)}
+.save-btn{background:none;border:none;cursor:pointer;padding:8px;display:flex;align-items:center;justify-content:center;border-radius:50%;-webkit-tap-highlight-color:transparent}
+.save-btn svg{width:24px;height:24px;fill:none;stroke:#1C2B0E;stroke-width:2;transition:fill .15s,stroke .15s}
+.save-btn.saved svg{fill:var(--moss);stroke:var(--moss)}
+.spacer{flex:1}
+.delete-btn-insta{background:none;border:none;cursor:pointer;padding:8px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.delete-btn-insta svg{width:20px;height:20px;fill:none;stroke:#ccc;stroke-width:2;transition:stroke .2s}
+.delete-btn-insta:hover svg{stroke:#C33}
+.card-meta{padding:4px 16px 10px}
+.card-caption{font-size:14px;color:var(--text);line-height:1.6;margin-bottom:8px}
+.card-caption .cap-author{font-weight:800;color:var(--moss);margin-right:5px}
+.plant-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.plant-tag{border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600}
+.plant-tag.age{background:rgba(139,105,20,.1);color:var(--soil)}
+.plant-tag.loc{background:rgba(45,80,22,.08);color:var(--moss)}
+.plant-tag.nm{background:rgba(90,138,43,.1);color:var(--leaf)}
+.care-tip{background:rgba(90,138,43,.07);border:1px solid rgba(90,138,43,.18);border-radius:10px;padding:8px 12px;font-size:12px;color:var(--moss);margin-bottom:10px;display:flex;gap:8px;align-items:flex-start;line-height:1.5}
+.care-tip-icon{font-size:15px;flex-shrink:0;margin-top:1px}
+.comments-preview{padding:0 16px 4px}
+.see-all-comments{font-size:13px;color:var(--muted);cursor:pointer;margin-bottom:6px;display:block;font-weight:600}
+.see-all-comments:hover{color:var(--moss)}
+.comment-item{display:flex;gap:8px;margin-bottom:8px;align-items:flex-start}
+.comment-avatar{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--moss),var(--lime));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0}
+.comment-body{flex:1}
+.comment-text{font-size:13px;color:var(--text);line-height:1.45}
+.comment-text strong{color:var(--moss);font-weight:700;margin-right:4px}
+.comment-time{font-size:10px;color:var(--muted);margin-top:1px}
+.comment-delete{background:none;border:none;cursor:pointer;font-size:12px;color:#ccc;padding:0 0 0 6px;flex-shrink:0}
+.comment-delete:hover{color:#C33}
+.comment-input-row{display:flex;align-items:center;gap:8px;border-top:1px solid rgba(0,0,0,.05);padding:10px 12px 12px}
+.comment-me-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--moss),var(--lime));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.comment-input-wrap{flex:1;display:flex;align-items:center;background:var(--cream);border-radius:24px;padding:0 4px 0 14px;border:1.5px solid transparent;transition:border-color .2s}
+.comment-input-wrap:focus-within{border-color:var(--leaf)}
+.comment-field{flex:1;border:none;background:none;padding:9px 0;font-size:13px;font-family:'Inter',sans-serif;outline:none;color:var(--text)}
+.comment-send{background:none;border:none;cursor:pointer;padding:6px 8px;font-size:13px;font-weight:700;color:var(--leaf)}
+.comment-send:disabled{opacity:.3;cursor:not-allowed}
+.card-post-time{font-size:10px;color:var(--muted);padding:0 16px 14px;letter-spacing:.4px}
+.empty-state{text-align:center;padding:72px 24px}
+.empty-state .big-icon{font-size:68px;display:block;margin-bottom:14px}
+.empty-state h3{font-family:'Playfair Display',serif;font-size:22px;color:var(--moss);margin-bottom:8px}
+.empty-state p{font-size:14px;color:var(--muted)}
+/* MODALS */
+.modal-overlay{position:fixed;inset:0;z-index:150;background:rgba(15,25,8,.68);backdrop-filter:blur(5px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--white);border-radius:28px 28px 0 0;width:100%;max-width:560px;max-height:94dvh;overflow-y:auto;transform:translateY(60px);transition:transform .3s cubic-bezier(.4,0,.2,1);box-shadow:0 -12px 60px rgba(0,0,0,.22)}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal-drag-bar{width:40px;height:4px;background:var(--parchment);border-radius:4px;margin:12px auto 4px}
+.modal-inner{padding:0 22px 32px}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:14px 0 18px}
+.modal-header h2{font-family:'Playfair Display',serif;font-size:22px;color:var(--moss)}
+.modal-close{background:var(--parchment);border:none;border-radius:50%;width:36px;height:36px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}
+.modal-close:hover{background:var(--sage)}
+.modal-form{display:flex;flex-direction:column;gap:16px}
+.upload-label{display:block;cursor:pointer}
+.upload-area{border:2px dashed var(--sage);border-radius:18px;padding:30px;text-align:center;transition:border-color .2s,background .2s;background:rgba(184,212,160,.07)}
+.upload-area:hover,.upload-area.drag-over{border-color:var(--leaf);background:rgba(90,138,43,.05)}
+.upload-icon-block{display:flex;flex-direction:column;align-items:center;gap:8px}
+.upload-icon-block .up-icon{font-size:36px}
+.upload-area p{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.5}
+.upload-area strong{color:var(--moss)}
+.upload-preview{width:100%;max-height:240px;object-fit:cover;border-radius:14px;display:none;margin-top:12px}
+.btn-rm-img{display:none;margin-top:8px;background:none;border:1px solid #F99;border-radius:8px;padding:5px 14px;font-size:12px;color:#C33;cursor:pointer;font-family:'Inter',sans-serif}
+.btn-rm-img:hover{background:#FEE}
+.modal-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+textarea.form-control{border:1.5px solid var(--sage);border-radius:12px;padding:12px 14px;font-size:14px;font-family:'Inter',sans-serif;resize:vertical;min-height:80px;outline:none;background:var(--cream);width:100%}
+textarea.form-control:focus{border-color:var(--leaf);box-shadow:0 0 0 3px rgba(90,138,43,.12)}
+.char-counter{font-size:11px;color:var(--muted);text-align:right;margin-top:-8px}
+.char-counter.warn{color:var(--soil)}
+.modal-actions{display:flex;gap:12px;justify-content:flex-end;margin-top:4px}
+.btn-cancel{background:none;border:1.5px solid var(--sage);border-radius:12px;padding:12px 22px;font-size:14px;font-weight:500;color:var(--muted);cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
+.btn-cancel:hover{border-color:var(--muted);color:var(--text)}
+/* COMMENTS SHEET */
+.cs-overlay{position:fixed;inset:0;z-index:160;background:rgba(15,25,8,.62);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .25s}
+.cs-overlay.open{opacity:1;pointer-events:all}
+.cs-sheet{position:fixed;bottom:0;left:0;right:0;z-index:161;background:var(--white);border-radius:24px 24px 0 0;max-height:82dvh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);box-shadow:0 -8px 40px rgba(0,0,0,.18)}
+.cs-sheet.open{transform:translateY(0)}
+.cs-drag{width:40px;height:4px;background:var(--parchment);border-radius:4px;margin:12px auto 0;flex-shrink:0}
+.cs-head{display:flex;align-items:center;justify-content:space-between;padding:13px 20px;border-bottom:1px solid var(--parchment);flex-shrink:0}
+.cs-head h3{font-family:'Playfair Display',serif;font-size:17px;color:var(--moss)}
+.cs-close{background:none;border:none;cursor:pointer;font-size:20px;color:var(--muted);width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.cs-close:hover{background:var(--parchment)}
+.cs-list{flex:1;overflow-y:auto;padding:16px 20px}
+.cs-item{display:flex;gap:10px;margin-bottom:16px}
+.cs-av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--moss),var(--lime));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.cs-body{flex:1}
+.cs-name{font-size:13px;font-weight:700;color:var(--moss)}
+.cs-text{font-size:14px;color:var(--text);line-height:1.5;margin-top:2px}
+.cs-time{font-size:11px;color:var(--muted);margin-top:3px}
+.cs-del{background:none;border:none;cursor:pointer;font-size:13px;color:#ccc;padding:0 0 0 8px;flex-shrink:0}
+.cs-del:hover{color:#C33}
+.no-comments{text-align:center;padding:40px 20px;color:var(--muted);font-size:14px}
+.no-comments span{font-size:36px;display:block;margin-bottom:10px}
+.cs-input-row{display:flex;align-items:center;gap:10px;border-top:1px solid var(--parchment);padding:12px 16px;flex-shrink:0}
+.cs-me-av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--moss),var(--lime));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.cs-input{flex:1;border:1.5px solid var(--sage);border-radius:24px;padding:10px 16px;font-size:14px;font-family:'Inter',sans-serif;outline:none;background:var(--cream);color:var(--text)}
+.cs-input:focus{border-color:var(--leaf)}
+.cs-send{background:linear-gradient(135deg,var(--moss),var(--leaf));color:#fff;border:none;border-radius:22px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif}
+.cs-send:disabled{opacity:.4;cursor:not-allowed}
+/* NOTIF */
+.np-overlay{position:fixed;inset:0;z-index:170;opacity:0;pointer-events:none;transition:opacity .2s}
+.np-overlay.open{opacity:1;pointer-events:all}
+.np-panel{position:fixed;top:56px;right:0;left:0;max-width:480px;margin:0 auto;background:var(--white);border-radius:0 0 20px 20px;box-shadow:0 8px 40px rgba(0,0,0,.18);z-index:171;max-height:70dvh;overflow-y:auto;transform:translateY(-20px);transition:transform .25s cubic-bezier(.4,0,.2,1)}
+.np-overlay.open .np-panel{transform:translateY(0)}
+.np-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--parchment)}
+.np-head h3{font-family:'Playfair Display',serif;font-size:17px;color:var(--moss)}
+.np-clear{background:none;border:none;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer}
+.np-clear:hover{color:var(--moss)}
+.np-list{padding:8px 0}
+.np-item{display:flex;gap:10px;padding:12px 18px;cursor:default}
+.np-item:hover{background:var(--cream)}
+.np-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--moss),var(--lime));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
+.np-body{flex:1}
+.np-text{font-size:13px;color:var(--text);line-height:1.45}
+.np-text strong{color:var(--moss)}
+.np-time{font-size:11px;color:var(--muted);margin-top:2px}
+.np-icon{font-size:18px;flex-shrink:0;margin-top:6px}
+.np-empty{text-align:center;padding:32px;color:var(--muted);font-size:14px}
+/* SAVED */
+.saved-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.saved-thumb{border-radius:12px;overflow:hidden;aspect-ratio:1;cursor:pointer;position:relative;background:var(--parchment);display:flex;align-items:center;justify-content:center;font-size:30px}
+.saved-thumb img{width:100%;height:100%;object-fit:cover}
+.saved-thumb-name{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.65));color:#fff;font-size:11px;font-weight:600;padding:18px 8px 6px;text-align:center}
+.saved-empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px}
+.saved-empty span{font-size:36px;display:block;margin-bottom:10px}
+/* CONFIRM */
+.confirm-overlay{position:fixed;inset:0;z-index:300;background:rgba(28,43,14,.5);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .2s}
+.confirm-overlay.open{opacity:1;pointer-events:all}
+.confirm-box{background:var(--white);border-radius:22px;padding:32px 28px;width:100%;max-width:360px;text-align:center;box-shadow:0 20px 60px rgba(28,43,14,.25);transform:scale(.95);transition:transform .2s}
+.confirm-overlay.open .confirm-box{transform:scale(1)}
+.confirm-icon{font-size:40px;margin-bottom:12px}
+.confirm-box h3{font-family:'Playfair Display',serif;font-size:20px;color:var(--text);margin-bottom:8px}
+.confirm-box p{font-size:14px;color:var(--muted);margin-bottom:24px}
+.confirm-btns{display:flex;gap:10px;justify-content:center}
+.btn-danger{background:#C33;color:#fff;border:none;border-radius:10px;padding:11px 22px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.btn-danger:hover{opacity:.88}
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--moss);color:#fff;padding:12px 22px;border-radius:100px;font-size:14px;font-weight:500;opacity:0;transition:all .35s;z-index:999;pointer-events:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.25)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.achieve-popup{position:fixed;top:68px;left:50%;transform:translateX(-50%) translateY(-20px);background:linear-gradient(135deg,var(--moss),var(--leaf));color:#fff;padding:14px 22px;border-radius:18px;font-size:14px;font-weight:600;opacity:0;transition:all .4s;z-index:998;pointer-events:none;white-space:nowrap;box-shadow:0 8px 30px rgba(45,80,22,.4);display:flex;align-items:center;gap:10px}
+.achieve-popup.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.ach-icon{font-size:22px}
+@media(max-width:600px){.navbar{padding:0 10px}.nav-brand{font-size:18px}.modal-inner{padding:0 14px 28px}.modal-row{grid-template-columns:1fr}.auth-card{padding:36px 22px}}
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:60;background:rgba(249,245,240,.97);backdrop-filter:blur(16px);border-top:1px solid rgba(90,138,43,.15);display:flex;align-items:stretch;height:58px;max-width:560px;margin:0 auto}
+.bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;cursor:pointer;font-family:'Inter',sans-serif;font-size:10px;font-weight:600;color:var(--muted);padding:6px 0;-webkit-tap-highlight-color:transparent;transition:color .2s}
+.bnav-btn .bnav-icon{font-size:22px;line-height:1}
+.bnav-btn.active{color:var(--moss)}
+.bnav-btn.active .bnav-icon{transform:scale(1.12)}
+/* PAGES */
+.page{display:none;min-height:calc(100dvh - 56px - 58px)}
+.page.active{display:block}
+/* RANKING PAGE */
+.ranking-page{padding:16px 16px 32px;max-width:540px;margin:0 auto}
+.ranking-page-title{font-family:'Playfair Display',serif;font-size:22px;color:var(--moss);margin-bottom:6px}
+.ranking-page-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+.ranking-card{background:var(--white);border-radius:18px;padding:18px;box-shadow:0 2px 12px rgba(45,80,22,.07);margin-bottom:12px;display:flex;align-items:center;gap:14px}
+.ranking-card .rc-pos{width:34px;height:34px;border-radius:50%;background:var(--parchment);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--muted);flex-shrink:0}
+.ranking-card .rc-pos.gold{background:linear-gradient(135deg,#F59E0B,#FBBF24);color:#fff}
+.ranking-card .rc-pos.silver{background:linear-gradient(135deg,#9CA3AF,#D1D5DB);color:#fff}
+.ranking-card .rc-pos.bronze{background:linear-gradient(135deg,#B45309,#D97706);color:#fff}
+.ranking-card .rc-av{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--moss),var(--lime));display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0}
+.ranking-card .rc-info{flex:1;min-width:0}
+.ranking-card .rc-name{font-size:15px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ranking-card .rc-stat{font-size:12px;color:var(--muted);margin-top:2px}
+.ranking-card .rc-medal{font-size:26px;flex-shrink:0}
+/* EXPLORE PAGE */
+.explore-page{padding:16px;max-width:540px;margin:0 auto}
+.explore-title{font-family:'Playfair Display',serif;font-size:22px;color:var(--moss);margin-bottom:6px}
+.explore-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+.explore-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}
+.explore-cat-card{background:var(--white);border-radius:18px;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;border:2px solid transparent;transition:all .2s;box-shadow:0 2px 10px rgba(45,80,22,.07)}
+.explore-cat-card:hover,.explore-cat-card.active{border-color:var(--leaf);background:rgba(90,138,43,.04)}
+.explore-cat-card .ecc-icon{font-size:36px}
+.explore-cat-card .ecc-label{font-size:13px;font-weight:700;color:var(--text)}
+.explore-cat-card .ecc-count{font-size:11px;color:var(--muted)}
+.explore-feed{display:flex;flex-direction:column;gap:0}
+/* Stories fix: use will-change to reduce flicker */
+.sv-overlay{will-change:opacity}
+.sv-img img{will-change:auto;backface-visibility:hidden}
+</style>
+</head><body>
+<div class="bg-nature"></div>
+<div id="loading-screen"><div class="loading-logo">🌿</div><div class="loading-title">FloraFeed</div><div class="loading-sub">Conectando ao jardim...</div><div class="loading-bar"><div class="loading-fill"></div></div></div>
+<div id="auth-screen" class="hidden">
+  <div class="auth-card">
+    <div class="auth-logo"><span class="leaf-icon">🌿</span><h1>FloraFeed</h1><p>Compartilhe a vida das suas plantas</p></div>
+    <div class="auth-tabs"><button class="auth-tab active" id="tab-btn-login">Entrar</button><button class="auth-tab" id="tab-btn-register">Criar conta</button></div>
+    <div class="auth-error" id="auth-error"></div>
+    <div id="tab-login" class="auth-form">
+      <div class="form-group"><label>E-mail</label><input type="email" id="login-email" placeholder="seu@email.com" autocomplete="email"/></div>
+      <div class="form-group"><label>Senha</label><div class="pass-wrap"><input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password"/><button class="pass-toggle" type="button" data-target="login-pass" tabindex="-1"><svg class="eye-icon" id="eye-login" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
+      <button class="btn-primary" id="btn-login">Entrar no jardim →</button>
+    </div>
+    <div id="tab-register" class="auth-form" style="display:none">
+      <div class="form-group"><label>Nome completo</label><input type="text" id="reg-name" placeholder="Maria das Plantas" autocomplete="name"/></div>
+      <div class="form-group"><label>E-mail</label><input type="email" id="reg-email" placeholder="seu@email.com" autocomplete="email"/></div>
+      <div class="form-group"><label>Senha</label><div class="pass-wrap"><input type="password" id="reg-pass" placeholder="Mín. 6 caracteres" autocomplete="new-password"/><button class="pass-toggle" type="button" data-target="reg-pass" tabindex="-1"><svg class="eye-icon" id="eye-register" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
+      <button class="btn-primary" id="btn-register">Criar minha conta 🌱</button>
+    </div>
+  </div>
+</div>
+<div id="app">
+  <nav class="navbar">
+    <div class="nav-left"><button class="btn-hamburger" id="btn-hamburger"><span class="bar"></span><span class="bar"></span><span class="bar"></span></button><div class="nav-brand"><span>🌿</span> FloraFeed</div></div>
+    <div class="nav-right"><button class="btn-post" id="btn-open-post"><span>＋</span> Publicar</button><button class="btn-icon" id="btn-notif" title="Notificações">🔔<span class="notif-badge" id="notif-badge"></span></button></div>
+  </nav>
+
+  <!-- PAGE: FEED -->
+  <div class="page active" id="page-feed">
+    <div class="main-content">
+      <div class="feed-hero"><h2>🌿 Jardim da Comunidade</h2><p>Descubra as plantas que todos estão cultivando</p><span class="feed-count" id="feed-count" style="display:none"></span></div>
+      <div class="weather-banner" id="weather-banner"><div class="weather-icon" id="weather-icon">☀️</div><div class="weather-text"><strong id="weather-title">Carregando...</strong><span id="weather-msg"></span></div></div>
+      <div class="stories-section"><div class="stories-scroll" id="stories-scroll"><div class="story-item" id="my-story-btn"><div class="story-ring add-ring"><div class="story-inner">➕</div></div><div class="story-label">Seu story</div></div></div></div>
+      <div class="feed-controls"><div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="search-input" placeholder="Buscar por nome, local, pessoa..."/></div></div>
+      <div class="feed-list" id="feed-list"></div>
+    </div>
+  </div>
+
+  <!-- PAGE: EXPLORE (categories) -->
+  <div class="page" id="page-explore">
+    <div class="explore-page">
+      <div class="explore-title">🌱 Explorar</div>
+      <div class="explore-sub">Filtre por tipo de planta</div>
+      <div class="explore-grid" id="explore-grid">
+        <div class="explore-cat-card active" data-cat="all"><div class="ecc-icon">🌿</div><div class="ecc-label">Todos</div><div class="ecc-count" id="ecc-all">—</div></div>
+        <div class="explore-cat-card" data-cat="suculenta"><div class="ecc-icon">🌵</div><div class="ecc-label">Suculentas</div><div class="ecc-count" id="ecc-suculenta">—</div></div>
+        <div class="explore-cat-card" data-cat="flor"><div class="ecc-icon">🌸</div><div class="ecc-label">Flores</div><div class="ecc-count" id="ecc-flor">—</div></div>
+        <div class="explore-cat-card" data-cat="arvore"><div class="ecc-icon">🌳</div><div class="ecc-label">Árvores</div><div class="ecc-count" id="ecc-arvore">—</div></div>
+        <div class="explore-cat-card" data-cat="vaso"><div class="ecc-icon">🪴</div><div class="ecc-label">Vasos</div><div class="ecc-count" id="ecc-vaso">—</div></div>
+        <div class="explore-cat-card" data-cat="erva"><div class="ecc-icon">🌱</div><div class="ecc-label">Ervas</div><div class="ecc-count" id="ecc-erva">—</div></div>
+        <div class="explore-cat-card" data-cat="aquatica"><div class="ecc-icon">💧</div><div class="ecc-label">Aquáticas</div><div class="ecc-count" id="ecc-aquatica">—</div></div>
+      </div>
+      <div class="explore-feed" id="explore-feed-list"></div>
+    </div>
+  </div>
+
+  <!-- PAGE: RANKING -->
+  <div class="page" id="page-ranking">
+    <div class="ranking-page">
+      <div class="ranking-page-title">🏆 Ranking</div>
+      <div class="ranking-page-sub">Os jardineiros mais ativos da comunidade</div>
+      <div id="ranking-list-page"><div style="font-size:13px;color:var(--muted);padding:20px 0">Publique para aparecer aqui!</div></div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="bnav-btn active" id="bnav-feed" data-page="feed"><div class="bnav-icon">🏠</div>Feed</button>
+    <button class="bnav-btn" id="bnav-explore" data-page="explore"><div class="bnav-icon">🔍</div>Explorar</button>
+    <button class="bnav-btn" id="bnav-ranking" data-page="ranking"><div class="bnav-icon">🏆</div>Ranking</button>
+  </nav>
+</div>
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header"><button class="sidebar-close" id="sidebar-close">✕</button><div class="sidebar-profile"><div class="profile-avatar" id="profile-avatar-display">?</div><div class="profile-name" id="sidebar-name">—</div><div class="profile-email" id="sidebar-email">—</div><div class="profile-badges" id="profile-badges"></div></div></div>
+  <div class="sidebar-tabs"><button class="sidebar-tab active" data-panel="panel-profile">👤 Perfil</button><button class="sidebar-tab" data-panel="panel-saved">🔖 Salvos</button><button class="sidebar-tab" data-panel="panel-tutorial">📖 Ajuda</button><button class="sidebar-tab" data-panel="panel-credits">🏆 Créditos</button></div>
+  <div class="sidebar-content">
+    <div class="sidebar-panel active" id="panel-profile">
+      <div class="info-row"><div class="info-label">Nome</div><div class="info-value" id="info-name">—</div></div>
+      <div class="info-row"><div class="info-label">E-mail</div><div class="info-value" id="info-email">—</div></div>
+      <div class="info-row"><div class="info-label">Membro desde</div><div class="info-value" id="info-since">—</div></div>
+      <div class="info-row"><div class="info-label">Minhas postagens</div><div class="info-value" id="info-posts">—</div></div>
+      <div class="info-row"><div class="info-label">Curtidas recebidas</div><div class="info-value" id="info-likes">—</div></div>
+      <div class="info-row"><div class="info-label">Conquistas</div><div class="info-value" id="info-badges">—</div></div>
+    </div>
+    <div class="sidebar-panel" id="panel-saved"><div id="saved-content"></div></div>
+    <div class="sidebar-panel" id="panel-tutorial">
+      <h3 style="font-family:'Playfair Display',serif;font-size:18px;color:var(--moss);margin-bottom:18px">Como usar o FloraFeed</h3>
+      <div class="tutorial-step"><div class="step-num">1</div><div class="step-body"><h4>Criar conta</h4><p>Toque em "Criar conta", informe nome, e-mail e senha (mín. 6 caracteres).</p></div></div>
+      <div class="tutorial-step"><div class="step-num">2</div><div class="step-body"><h4>Publicar planta</h4><p>Toque em "＋ Publicar", adicione foto da galeria, nome, categoria, local e idade.</p></div></div>
+      <div class="tutorial-step"><div class="step-num">3</div><div class="step-body"><h4>Stories</h4><p>Toque em "➕ Seu story" para postar uma foto que expira em 24h e que todos podem ver.</p></div></div>
+      <div class="tutorial-step"><div class="step-num">4</div><div class="step-body"><h4>Curtir</h4><p>Toque no ❤️ ou dê dois toques na foto. O coração fica vermelho e o número sobe.</p></div></div>
+      <div class="tutorial-step"><div class="step-num">5</div><div class="step-body"><h4>Comentar</h4><p>Toque no 💬 ou no campo de texto para comentar. Todos os usuários veem os comentários.</p></div></div>
+      <div class="tutorial-step"><div class="step-num">6</div><div class="step-body"><h4>Salvar</h4><p>Toque no 🔖 para salvar uma planta. Acesse a aba "Salvos" neste menu.</p></div></div>
+      <div class="tutorial-step"><div class="step-num">7</div><div class="step-body"><h4>Notificações</h4><p>Toque no 🔔 para ver quando alguém curtiu ou comentou nas suas plantas.</p></div></div>
+      <div class="tutorial-step"><div class="step-num">8</div><div class="step-body"><h4>Conquistas</h4><p>Badges são desbloqueados automaticamente conforme você usa o FloraFeed!</p></div></div>
+    </div>
+    <div class="sidebar-panel" id="panel-credits">
+      <div class="credit-card"><div class="ci">💻</div><h4>Desenvolvedor &amp; Proprietário</h4><p>Criado por <strong style="color:#2D5016;font-size:15px">Witalo da Silva Lima</strong></p><p style="margin-top:6px">Construído em <strong>HTML5</strong>, <strong>CSS3</strong>, <strong>JavaScript</strong> e integrado ao <strong>Firebase</strong> (banco de dados em tempo real, autenticação e armazenamento de imagens).</p><span class="credit-tag">HTML · CSS · JavaScript · Firebase</span></div>
+      <div class="credit-card"><div class="ci">🎓</div><h4>Projeto SeloVerde</h4><p>Desenvolvido para apoiar o projeto <strong style="color:#2D5016">SeloVerde</strong> da escola, conectando alunos que cultivam plantas e promovem o verde na comunidade.</p><span class="credit-tag">Educacional · SeloVerde</span></div>
+      <div class="credit-card"><div class="ci">🌿</div><h4>FloraFeed v4.0</h4><p>Banco de dados real · Stories · Ranking · Notificações · Conquistas · Categorias</p><span class="credit-tag">v4.0 Firebase</span></div>
+    </div>
+  </div>
+  <div class="sidebar-logout"><button class="btn-logout" id="btn-logout">🚪 Sair da conta</button></div>
+</aside>
+<div class="np-overlay" id="np-overlay"><div class="np-panel" id="np-panel"><div class="np-head"><h3>🔔 Notificações</h3><button class="np-clear" id="np-clear">Limpar</button></div><div class="np-list" id="np-list"><div class="np-empty">Sem notificações ainda.</div></div></div></div>
+<div class="modal-overlay" id="post-modal"><div class="modal"><div class="modal-drag-bar"></div><div class="modal-inner">
+  <div class="modal-header"><h2>🌱 Nova planta</h2><button class="modal-close" id="modal-close-btn">✕</button></div>
+  <div class="modal-form">
+    <input type="file" id="file-input-gallery" accept="image/*" style="display:none">
+    <label class="upload-label" for="file-input-gallery"><div class="upload-area" id="upload-area"><div class="upload-icon-block" id="upload-placeholder"><span class="up-icon">🖼️</span><p><strong>Toque para escolher uma foto da galeria</strong><br>JPG, PNG, WEBP — até 5 MB</p></div><img id="upload-preview" class="upload-preview" alt="preview"></div></label>
+    <button class="btn-rm-img" id="btn-rm-img" type="button">✕ Remover foto</button>
+    <div class="form-group"><label>Nome da planta</label><input type="text" id="plant-name" placeholder="Ex: Orquídea, Samambaia..." maxlength="60"/></div>
+    <div class="modal-row"><div class="form-group"><label>Idade</label><input type="text" id="plant-age" placeholder="Ex: 2 anos..." maxlength="30"/></div><div class="form-group"><label>Local</label><input type="text" id="plant-location" placeholder="Ex: Varanda..." maxlength="40"/></div></div>
+    <div class="form-group"><label>Categoria</label><select id="plant-category"><option value="all">🌿 Geral</option><option value="suculenta">🌵 Suculenta</option><option value="flor">🌸 Flor</option><option value="arvore">🌳 Árvore</option><option value="vaso">🪴 Vaso</option><option value="erva">🌱 Erva</option><option value="aquatica">💧 Aquática</option></select></div>
+    <div class="form-group"><label>Descrição (opcional)</label><textarea class="form-control" id="plant-desc" placeholder="Conte sobre essa planta..." maxlength="300"></textarea><span class="char-counter" id="char-counter">0 / 300</span></div>
+    <div class="modal-actions"><button class="btn-cancel" id="modal-cancel-btn">Cancelar</button><button class="btn-primary" style="width:auto;padding:12px 28px" id="btn-submit-post">Publicar 🌿</button></div>
+  </div>
+</div></div></div>
+<div class="modal-overlay" id="story-modal"><div class="modal"><div class="modal-drag-bar"></div><div class="modal-inner">
+  <div class="modal-header"><h2>📸 Novo Story</h2><button class="modal-close" id="story-modal-close">✕</button></div>
+  <div class="modal-form">
+    <input type="file" id="story-file-input" accept="image/*" style="display:none">
+    <label class="upload-label" for="story-file-input"><div class="upload-area" id="story-upload-area"><div class="upload-icon-block" id="story-placeholder"><span class="up-icon">📸</span><p><strong>Toque para escolher a foto do story</strong><br>Visível para todos por 24 horas</p></div><img id="story-preview" class="upload-preview" alt="story"></div></label>
+    <div class="form-group"><label>Legenda (opcional)</label><input type="text" id="story-caption" placeholder="Ex: Minha planta floriu! 🌸" maxlength="100"/></div>
+    <div class="modal-actions"><button class="btn-cancel" id="story-cancel-btn">Cancelar</button><button class="btn-primary" style="width:auto;padding:12px 28px" id="btn-submit-story">Publicar Story 📸</button></div>
+  </div>
+</div></div></div>
+<div class="sv-overlay" id="sv-overlay"><div class="sv-box"><div class="sv-bars" id="sv-bars"></div><div class="sv-head"><div class="sv-av" id="sv-av">?</div><div class="sv-name" id="sv-name">—</div><div class="sv-time" id="sv-time">—</div><button class="sv-close" id="sv-close">✕</button></div><div class="sv-img" id="sv-img"><div class="sv-no-img">🌿</div></div><div class="sv-tap-l" id="sv-tap-l"></div><div class="sv-tap-r" id="sv-tap-r"></div></div></div>
+<div class="cs-overlay" id="cs-overlay"></div>
+<div class="cs-sheet" id="cs-sheet"><div class="cs-drag"></div><div class="cs-head"><h3>💬 Comentários</h3><button class="cs-close" id="cs-close">✕</button></div><div class="cs-list" id="cs-list"></div><div class="cs-input-row"><div class="cs-me-av" id="cs-me-av">?</div><input class="cs-input" id="cs-input" placeholder="Adicione um comentário..." maxlength="200"/><button class="cs-send" id="cs-send" disabled>Enviar</button></div></div>
+<div class="confirm-overlay" id="confirm-overlay"><div class="confirm-box"><div class="confirm-icon" id="confirm-icon">⚠️</div><h3 id="confirm-title">Tem certeza?</h3><p id="confirm-msg">Esta ação não pode ser desfeita.</p><div class="confirm-btns"><button class="btn-cancel" id="confirm-cancel">Cancelar</button><button class="btn-danger" id="confirm-ok">Confirmar</button></div></div></div>
+<div class="toast" id="toast"></div>
+<div class="achieve-popup" id="achieve-popup"><span class="ach-icon">🏆</span><span id="achieve-text"></span></div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, arrayUnion, arrayRemove, getDoc, setDoc, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+// Storage not needed - using base64 inline images
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAW_0RaQq5ejZyI7jX2y40bRI6PuZpTDfE",
+  authDomain: "florafeed-aa733.firebaseapp.com",
+  projectId: "florafeed-aa733",
+  storageBucket: "florafeed-aa733.firebasestorage.app",
+  messagingSenderId: "959584696077",
+  appId: "1:959584696077:web:b9970e2021d47371816244",
+  measurementId: "G-JM7XNHMLLV"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+// No storage needed
+
+// ── STATE ──
+var currentUser = null, imageDataUrl = null, storyImgData = null;
+var confirmCallback = null, toastTimer = null, achieveTimer = null;
+var activeCommentPostId = null, activeCategory = 'all';
+var viewerStories = [], viewerIdx = 0, storyTimer = null, viewerUserGroups = [];
+var unsubPosts = null, savedPostIds = [];
+
+// ── TIPS ──
+var TIPS = {orquidea:'💧 Regue a cada 7 dias. Evite luz direta.',suculenta:'🌵 Regue pouco! Solo seco entre regas.',samambaia:'💦 Solo úmido. Umidade alta é essencial.',cacto:'🌵 Regue apenas 1x por mês.',rosa:'🌹 Regue na base. Poda ajuda a florescer.',girassol:'🌻 Sol pleno e rega diária no verão.',lavanda:'💜 Solo seco. Pouca rega.',aloe:'✨ Regar só quando o solo estiver seco.',default:'🌿 Solo levemente úmido e local iluminado.'};
+function getCareTip(name){var n=name.toLowerCase();for(var k in TIPS){if(k!=='default'&&n.indexOf(k)!==-1)return TIPS[k]}return TIPS['default']}
+
+// ── BADGES ──
+var BADGES=[
+  {id:'first_post',icon:'🌱',label:'Primeira Planta'},
+  {id:'five_posts',icon:'🌿',label:'Jardineiro'},
+  {id:'ten_likes',icon:'❤️',label:'Querido do Jardim'},
+  {id:'commentator',icon:'💬',label:'Comunicativo'},
+  {id:'story_teller',icon:'📸',label:'Contador de Histórias'},
+  {id:'top_grower',icon:'🏆',label:'Rei do Jardim'},
+];
+
+// ── UTILS ──
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function fmtTime(ts){if(!ts)return'agora';var d=Date.now()-ts.toMillis();var m=Math.floor(d/60000),h=Math.floor(d/3600000),dy=Math.floor(d/86400000);if(m<1)return'agora mesmo';if(m<60)return m+'min atrás';if(h<24)return h+'h atrás';if(dy===1)return'ontem';return dy+'d atrás'}
+function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove('show')},3200)}
+function showAchieve(msg){var el=document.getElementById('achieve-popup');document.getElementById('achieve-text').textContent=msg;el.classList.add('show');clearTimeout(achieveTimer);achieveTimer=setTimeout(function(){el.classList.remove('show')},4000)}
+
+// ── WEATHER ──
+function initWeather(){
+  var h=new Date().getHours(),b=document.getElementById('weather-banner'),ic=document.getElementById('weather-icon'),ti=document.getElementById('weather-title'),ms=document.getElementById('weather-msg');
+  var cfg;
+  if(h>=5&&h<8){cfg={cls:'',icon:'🌅',title:'Amanhecer fresco',msg:'Hora perfeita para regar!'}}
+  else if(h>=8&&h<12){cfg={cls:'',icon:'☀️',title:'Manhã ensolarada',msg:'Ótimo momento para cuidar das plantas!'}}
+  else if(h>=12&&h<15){cfg={cls:'hot',icon:'🌞',title:'Sol forte!',msg:'Evite regar agora. Aguarde a tarde.'}}
+  else if(h>=15&&h<18){cfg={cls:'',icon:'🌤️',title:'Tarde agradável',msg:'Momento ideal para regar o jardim. 🌱'}}
+  else if(h>=18&&h<21){cfg={cls:'',icon:'🌇',title:'Final de tarde',msg:'Hora de uma rega leve antes de anoitecer.'}}
+  else{cfg={cls:'night',icon:'🌙',title:'Noite no jardim',msg:'O jardim descansa, mas o feed nunca dorme! 🌿'}}
+  if(b)b.className='weather-banner'+(cfg.cls?' '+cfg.cls:'');
+  if(ic)ic.textContent=cfg.icon;if(ti)ti.textContent=cfg.title;if(ms)ms.textContent=cfg.msg;
+}
+
+// ── AUTH STATE ──
+onAuthStateChanged(auth, async function(user) {
+  if(user) {
+    var uDoc = await getDoc(doc(db,'users',user.uid));
+    var uData = uDoc.exists() ? uDoc.data() : {};
+    currentUser = {uid:user.uid, name:user.displayName||uData.name||'Usuário', email:user.email, avatar:(user.displayName||uData.name||'U')[0].toUpperCase(), badges:uData.badges||[]};
+    document.getElementById('loading-screen').classList.add('hidden');
+    document.getElementById('auth-screen').classList.add('hidden');
+    document.getElementById('app').classList.add('visible');
+    updateSidebarProfile();initWeather();renderStoriesBar();renderRanking();startFeedListener();updateNotifBadge();
+    setTimeout(checkAchievements,800);
+  } else {
+    currentUser=null;
+    document.getElementById('loading-screen').classList.add('hidden');
+    document.getElementById('auth-screen').classList.remove('hidden');
+    document.getElementById('app').classList.remove('visible');
+    if(unsubPosts){unsubPosts();unsubPosts=null;}
+  }
+});
+
+// ── REGISTER ──
+async function doRegister(){
+  var btn=document.getElementById('btn-register');
+  var name=document.getElementById('reg-name').value.trim();
+  var email=document.getElementById('reg-email').value.trim().toLowerCase();
+  var pass=document.getElementById('reg-pass').value;
+  if(!name)return showErr('Informe seu nome.');
+  if(!email||email.indexOf('@')===-1)return showErr('E-mail inválido.');
+  if(pass.length<6)return showErr('Senha mínimo 6 caracteres.');
+  btn.disabled=true;btn.textContent='Criando conta...';
+  try{
+    var cred=await createUserWithEmailAndPassword(auth,email,pass);
+    await updateProfile(cred.user,{displayName:name});
+    await setDoc(doc(db,'users',cred.user.uid),{name:name,email:email,badges:[],createdAt:serverTimestamp()});
+    btn.disabled=false;btn.textContent='Criar minha conta 🌱';
+  }catch(e){showErr(e.code==='auth/email-already-in-use'?'E-mail já cadastrado.':'Erro: '+e.message);btn.disabled=false;btn.textContent='Criar minha conta 🌱'}
+}
+
+// ── LOGIN ──
+async function doLogin(){
+  var btn=document.getElementById('btn-login');
+  var email=document.getElementById('login-email').value.trim().toLowerCase();
+  var pass=document.getElementById('login-pass').value;
+  if(!email||!pass)return showErr('Preencha e-mail e senha.');
+  btn.disabled=true;btn.textContent='Entrando...';
+  try{await signInWithEmailAndPassword(auth,email,pass);btn.disabled=false;btn.textContent='Entrar no jardim →';}
+  catch(e){showErr('E-mail ou senha incorretos.');btn.disabled=false;btn.textContent='Entrar no jardim →'}
+}
+
+function showErr(msg){var el=document.getElementById('auth-error');el.textContent=msg;el.classList.add('show')}
+function hideErr(){document.getElementById('auth-error').classList.remove('show')}
+function switchTab(tab){document.getElementById('tab-login').style.display=tab==='login'?'flex':'none';document.getElementById('tab-register').style.display=tab==='register'?'flex':'none';document.getElementById('tab-btn-login').classList.toggle('active',tab==='login');document.getElementById('tab-btn-register').classList.toggle('active',tab==='register');hideErr()}
+
+// ── LOGOUT ──
+function confirmLogout(){openConfirm({icon:'🌿',title:'Sair do FloraFeed?',msg:'Você precisará fazer login novamente.',okLabel:'Sair',onOk:function(){signOut(auth);showToast('👋 Até logo!')}})}
+
+// ── SIDEBAR ──
+function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('sidebar-overlay').classList.add('open');document.body.style.overflow='hidden'}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebar-overlay').classList.remove('open');document.body.style.overflow=''}
+
+function updateSidebarProfile(){
+  if(!currentUser)return;
+  document.getElementById('sidebar-name').textContent=currentUser.name;
+  document.getElementById('sidebar-email').textContent=currentUser.email;
+  document.getElementById('profile-avatar-display').textContent=currentUser.avatar;
+  document.getElementById('info-name').textContent=currentUser.name;
+  document.getElementById('info-email').textContent=currentUser.email;
+  document.getElementById('info-since').textContent='Membro do FloraFeed';
+  document.getElementById('cs-me-av').textContent=currentUser.avatar;
+  var earned=currentUser.badges||[];
+  document.getElementById('info-badges').textContent=earned.length===0?'Nenhuma ainda 🌱':earned.map(function(id){for(var i=0;i<BADGES.length;i++){if(BADGES[i].id===id)return BADGES[i].icon+' '+BADGES[i].label}return id}).join(', ');
+  var pillsEl=document.getElementById('profile-badges');
+  if(pillsEl)pillsEl.innerHTML=earned.slice(0,3).map(function(id){for(var i=0;i<BADGES.length;i++){if(BADGES[i].id===id)return'<span class="badge-pill">'+BADGES[i].icon+' '+BADGES[i].label+'</span>'}return''}).join('');
+}
+
+// ── ACHIEVEMENTS ──
+async function checkAchievements(){
+  if(!currentUser)return;
+  var posts=[];
+  var snap=await getDocs(query(collection(db,'posts'),orderBy('createdAt','desc')));
+  snap.forEach(function(d){posts.push(Object.assign({id:d.id},d.data()))});
+  var myPosts=posts.filter(function(p){return p.authorUid===currentUser.uid});
+  var totalLikes=0;myPosts.forEach(function(p){if(p.likes)totalLikes+=p.likes.length});
+  var myComments=0;posts.forEach(function(p){if(p.comments)p.comments.forEach(function(c){if(c.authorUid===currentUser.uid)myComments++})});
+  var storiesSnap=await getDocs(query(collection(db,'stories'),where('authorUid','==',currentUser.uid)));
+  var myStories=storiesSnap.size;
+  var earned=currentUser.badges||[],newBadge=null;
+  var checks=[
+    {id:'first_post',ok:myPosts.length>=1},
+    {id:'five_posts',ok:myPosts.length>=5},
+    {id:'ten_likes',ok:totalLikes>=10},
+    {id:'commentator',ok:myComments>=5},
+    {id:'story_teller',ok:myStories>=1},
+    {id:'top_grower',ok:myPosts.length>=10&&totalLikes>=20},
+  ];
+  for(var i=0;i<checks.length;i++){
+    if(earned.indexOf(checks[i].id)===-1&&checks[i].ok){
+      earned.push(checks[i].id);newBadge=checks[i].id;break;
+    }
+  }
+  if(newBadge){
+    currentUser.badges=earned;
+    await updateDoc(doc(db,'users',currentUser.uid),{badges:earned});
+    var b=BADGES.find(function(x){return x.id===newBadge});
+    if(b)showAchieve(b.icon+' '+b.label+' desbloqueado!');
+    updateSidebarProfile();
+  }
+  // Update stats in sidebar
+  document.getElementById('info-posts').textContent=myPosts.length+' publicaç'+(myPosts.length!==1?'ões':'ão');
+  document.getElementById('info-likes').textContent=totalLikes+' curtida'+(totalLikes!==1?'s':'');
+}
+
+// ── NOTIFICATIONS ──
+async function addNotif(type,toUid,fromName,postName){
+  if(!toUid||toUid===currentUser.uid)return;
+  var icons={like:'❤️',comment:'💬'};
+  await addDoc(collection(db,'notifs'),{toUid:toUid,type:type,from:fromName,post:postName,icon:icons[type]||'🔔',createdAt:serverTimestamp(),read:false});
+  updateNotifBadge();
+}
+async function updateNotifBadge(){
+  if(!currentUser)return;
+  var snap=await getDocs(query(collection(db,'notifs'),where('toUid','==',currentUser.uid),where('read','==',false)));
+  var unread=snap.size;
+  var badge=document.getElementById('notif-badge');
+  if(badge){badge.textContent=unread>9?'9+':String(unread);badge.className='notif-badge'+(unread>0?' show':'')}
+}
+async function renderNotifPanel(){
+  if(!currentUser)return;
+  var snap=await getDocs(query(collection(db,'notifs'),where('toUid','==',currentUser.uid),orderBy('createdAt','desc')));
+  var notifs=[];snap.forEach(function(d){notifs.push(Object.assign({id:d.id},d.data()))});
+  var list=document.getElementById('np-list');if(!list)return;
+  if(notifs.length===0){list.innerHTML='<div class="np-empty">Sem notificações ainda.</div>';return}
+  var html='';
+  for(var i=0;i<notifs.length;i++){
+    var n=notifs[i];
+    var msg=n.type==='like'?'<strong>'+esc(n.from||'')+'</strong> curtiu sua planta <strong>'+esc(n.post||'')+'</strong>':'<strong>'+esc(n.from||'')+'</strong> comentou em <strong>'+esc(n.post||'')+'</strong>';
+    html+='<div class="np-item"><div class="np-av">'+(n.from?n.from[0].toUpperCase():'🌿')+'</div><div class="np-body"><div class="np-text">'+msg+'</div><div class="np-time">'+(n.createdAt?fmtTime(n.createdAt):'agora')+'</div></div><div class="np-icon">'+esc(n.icon||'🔔')+'</div></div>';
+  }
+  list.innerHTML=html;
+  // Mark all read
+  snap.forEach(function(d){updateDoc(doc(db,'notifs',d.id),{read:true})});
+  updateNotifBadge();
+}
+
+// ── STORIES ──
+async function renderStoriesBar(){
+  var scroll=document.getElementById('stories-scroll');if(!scroll)return;
+  var now=Date.now();
+  var snap=await getDocs(query(collection(db,'stories'),orderBy('createdAt','desc')));
+  var byUser={};
+  snap.forEach(function(d){
+    var s=Object.assign({id:d.id},d.data());
+    if(!s.createdAt)return;
+    var age=now-s.createdAt.toMillis();
+    if(age>86400000)return; // skip older than 24h
+    if(!byUser[s.authorUid]||s.createdAt.toMillis()>byUser[s.authorUid].createdAt.toMillis())byUser[s.authorUid]=s;
+  });
+  var seenRaw=localStorage.getItem('ff_seen_'+(currentUser?currentUser.uid:''))||'[]';
+  var seen=[];try{seen=JSON.parse(seenRaw)}catch(e){}
+  var html='<div class="story-item" id="my-story-btn"><div class="story-ring add-ring"><div class="story-inner">➕</div></div><div class="story-label">Seu story</div></div>';
+  for(var uid in byUser){
+    var st=byUser[uid];var isSeen=seen.indexOf(st.id)!==-1;var isMe=currentUser&&st.authorUid===currentUser.uid;
+    var inner=st.image?'<img src="'+st.image+'" alt="story">':esc(st.authorAvatar||'?');
+    html+='<div class="story-item" data-story-uid="'+esc(uid)+'"><div class="story-ring'+(isSeen?' seen':'')+'">'+'<div class="story-inner">'+inner+'</div></div><div class="story-label">'+(isMe?'Você':esc(st.authorName.split(' ')[0]))+'</div></div>';
+  }
+  scroll.innerHTML=html;
+  document.getElementById('my-story-btn').addEventListener('click',openStoryModal);
+  scroll.querySelectorAll('[data-story-uid]').forEach(function(el){el.addEventListener('click',function(){openStoryViewer(el.getAttribute('data-story-uid'))})});
+}
+
+function openStoryModal(){document.getElementById('story-modal').classList.add('open');document.body.style.overflow='hidden'}
+function closeStoryModal(){document.getElementById('story-modal').classList.remove('open');document.body.style.overflow='';storyImgData=null;document.getElementById('story-preview').style.display='none';document.getElementById('story-placeholder').style.display='flex';document.getElementById('story-caption').value='';document.getElementById('story-file-input').value=''}
+
+async function submitStory(){
+  var caption=document.getElementById('story-caption').value.trim();
+  if(!storyImgData&&!caption){showToast('⚠️ Adicione foto ou legenda');return}
+  var btn=document.getElementById('btn-submit-story');btn.disabled=true;btn.textContent='Publicando...';
+  try{
+    var imgUrl=null;
+    if(storyImgData){
+      imgUrl=await compressImage(storyImgData,600,0.65);
+    }
+    await addDoc(collection(db,'stories'),{authorUid:currentUser.uid,authorName:currentUser.name,authorAvatar:currentUser.avatar,image:imgUrl,caption:caption,createdAt:serverTimestamp()});
+    closeStoryModal();renderStoriesBar();showToast('📸 Story publicado!');checkAchievements();
+  }catch(e){showToast('⚠️ Erro ao publicar story.')}
+  btn.disabled=false;btn.textContent='Publicar Story 📸';
+}
+
+async function openStoryViewer(startAuthorUid){
+  var now=Date.now();
+  // Load ALL stories from the last 24h
+  var snap=await getDocs(query(collection(db,'stories'),orderBy('createdAt','desc')));
+  // Group by user, keep only most recent per user within 24h
+  var byUser={},userOrder=[];
+  snap.forEach(function(d){
+    var s=Object.assign({id:d.id},d.data());
+    if(!s.createdAt)return;
+    var age=now-s.createdAt.toMillis();
+    if(age>86400000)return;
+    if(!byUser[s.authorUid]){byUser[s.authorUid]=[];userOrder.push(s.authorUid)}
+    byUser[s.authorUid].push(s);
+  });
+  if(userOrder.length===0)return;
+  // Build flat story list ordered by user, starting from the tapped user
+  // Sort each user's stories oldest→newest for progression
+  for(var uid in byUser){byUser[uid].sort(function(a,b){return a.createdAt.toMillis()-b.createdAt.toMillis()})}
+  // Re-order userOrder so startAuthorUid comes first
+  var startIdx=userOrder.indexOf(startAuthorUid);
+  if(startIdx>0){
+    var before=userOrder.slice(0,startIdx),after=userOrder.slice(startIdx);
+    userOrder=after.concat(before);
+  }
+  // Flatten into one list, tagging each story with user index for progress bars
+  viewerStories=[];
+  viewerUserGroups=[]; // array of {uid, start, count}
+  for(var i=0;i<userOrder.length;i++){
+    var uid2=userOrder[i];var arr=byUser[uid2];
+    viewerUserGroups.push({uid:uid2,start:viewerStories.length,count:arr.length});
+    for(var j=0;j<arr.length;j++)viewerStories.push(arr[j]);
+  }
+  viewerIdx=0;
+  document.getElementById('sv-overlay').classList.add('open');document.body.style.overflow='hidden';showStoryAt(0);
+}
+function showStoryAt(idx){
+  clearTimeout(storyTimer);
+  if(idx<0||idx>=viewerStories.length){closeStoryViewer();return}
+  viewerIdx=idx;var s=viewerStories[idx];
+  // Mark seen
+  var key='ff_seen_'+(currentUser?currentUser.uid:'');var seen=[];try{seen=JSON.parse(localStorage.getItem(key)||'[]')}catch(e){}
+  if(seen.indexOf(s.id)===-1){seen.push(s.id);localStorage.setItem(key,JSON.stringify(seen))}
+  // Find which user group this story belongs to
+  var curGroup=null;
+  for(var g=0;g<viewerUserGroups.length;g++){
+    var grp=viewerUserGroups[g];
+    if(idx>=grp.start&&idx<grp.start+grp.count){curGroup=grp;break}
+  }
+  document.getElementById('sv-av').textContent=s.authorAvatar||'?';
+  document.getElementById('sv-name').textContent=s.authorName||'';
+  document.getElementById('sv-time').textContent=s.createdAt?fmtTime(s.createdAt):'';
+  var imgArea=document.getElementById('sv-img');
+  var cap=s.caption?'<div class="sv-caption">'+esc(s.caption)+'</div>':'';
+  imgArea.innerHTML=s.image?'<img src="'+s.image+'" alt="story">'+cap:'<div class="sv-no-img">🌿</div>'+cap;
+  // Progress bars: show only the current user's stories in the bar
+  var bars=document.getElementById('sv-bars'),segsHtml='';
+  if(curGroup){
+    var localIdx=idx-curGroup.start;
+    for(var i=0;i<curGroup.count;i++)segsHtml+='<div class="sv-seg"><div class="sv-fill" id="svf-'+i+'" style="width:'+(i<localIdx?'100%':'0%')+'"></div></div>';
+    bars.innerHTML=segsHtml;
+    var fill=document.getElementById('svf-'+localIdx);
+    if(fill)setTimeout(function(){fill.style.transition='width 5s linear';fill.style.width='100%'},50);
+  }
+  storyTimer=setTimeout(function(){showStoryAt(idx+1)},5200);
+  renderStoriesBar();
+}
+function closeStoryViewer(){clearTimeout(storyTimer);document.getElementById('sv-overlay').classList.remove('open');document.body.style.overflow='';renderStoriesBar()}
+
+// ── RANKING ──
+async function renderRanking(){
+  var snap=await getDocs(query(collection(db,'posts'),orderBy('createdAt','desc')));
+  var scores={};
+  snap.forEach(function(d){var p=d.data();if(!scores[p.authorUid])scores[p.authorUid]={name:p.authorName,av:p.authorAvatar,likes:0,posts:0};scores[p.authorUid].likes+=(p.likes?p.likes.length:0);scores[p.authorUid].posts++});
+  var arr=[];for(var k in scores)arr.push(scores[k]);
+  arr.sort(function(a,b){return(b.likes*2+b.posts)-(a.likes*2+a.posts)});
+  var top=arr.slice(0,10),rl=document.getElementById('ranking-list-page');if(!rl)return;
+  if(top.length===0){rl.innerHTML='<div style="font-size:13px;color:var(--muted);padding:20px 0">Publique para aparecer aqui!</div>';return}
+  var medals=['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];
+  var posCls=['gold','silver','bronze','','','','','','',''];
+  var html='';
+  for(var j=0;j<top.length;j++){
+    var r=top[j];
+    html+='<div class="ranking-card">'
+      +'<div class="rc-pos '+posCls[j]+'">'+(j+1)+'</div>'
+      +'<div class="rc-av">'+esc(r.av)+'</div>'
+      +'<div class="rc-info"><div class="rc-name">'+esc(r.name)+'</div><div class="rc-stat">'+r.likes+' curtida'+(r.likes!==1?'s':'')+' · '+r.posts+' planta'+(r.posts!==1?'s':'')+'</div></div>'
+      +'<div class="rc-medal">'+medals[j]+'</div>'
+      +'</div>';
+  }
+  rl.innerHTML=html;
+}
+
+// ── SAVED ──
+function getSaved(){var raw=localStorage.getItem('ff_saved_'+(currentUser?currentUser.uid:''))||'[]';try{return JSON.parse(raw)}catch(e){return[]}}
+function saveSaved(s){localStorage.setItem('ff_saved_'+(currentUser?currentUser.uid:''),JSON.stringify(s))}
+function toggleSave(postId){
+  var saved=getSaved(),idx=saved.indexOf(postId);
+  if(idx===-1){saved.push(postId);saveSaved(saved);showToast('🔖 Salvo!')}else{saved.splice(idx,1);saveSaved(saved);showToast('Removido dos salvos.')}
+  var btn=document.getElementById('save-btn-'+postId);if(btn)btn.classList.toggle('saved',idx===-1);
+}
+
+// ── CONFIRM ──
+function openConfirm(opts){document.getElementById('confirm-icon').textContent=opts.icon||'⚠️';document.getElementById('confirm-title').textContent=opts.title;document.getElementById('confirm-msg').textContent=opts.msg;document.getElementById('confirm-ok').textContent=opts.okLabel||'Confirmar';confirmCallback=opts.onOk;document.getElementById('confirm-overlay').classList.add('open');document.body.style.overflow='hidden'}
+function closeConfirm(){document.getElementById('confirm-overlay').classList.remove('open');document.body.style.overflow='';confirmCallback=null}
+
+// ── POST MODAL ──
+function openPostModal(){document.getElementById('post-modal').classList.add('open');document.body.style.overflow='hidden';setTimeout(function(){document.getElementById('plant-name').focus()},300)}
+function closePostModal(){document.getElementById('post-modal').classList.remove('open');document.body.style.overflow=''}
+function loadImageFile(file){
+  if(!file)return;if(file.size>5*1024*1024){showToast('⚠️ Imagem muito grande (máx 5MB)');return}
+  if(!file.type.startsWith('image/')){showToast('⚠️ Deve ser uma imagem');return}
+  var reader=new FileReader();
+  reader.onload=function(ev){imageDataUrl=ev.target.result;var p=document.getElementById('upload-preview');p.src=imageDataUrl;p.style.display='block';document.getElementById('btn-rm-img').style.display='inline-block';document.getElementById('upload-placeholder').style.display='none';showToast('✅ Foto adicionada!')};
+  reader.onerror=function(){showToast('⚠️ Erro ao carregar imagem.')};
+  reader.readAsDataURL(file);
+}
+function removeImage(){imageDataUrl=null;var p=document.getElementById('upload-preview');p.src='';p.style.display='none';document.getElementById('btn-rm-img').style.display='none';document.getElementById('upload-placeholder').style.display='flex';document.getElementById('file-input-gallery').value=''}
+function updateCharCount(){var v=document.getElementById('plant-desc').value.length,el=document.getElementById('char-counter');el.textContent=v+' / 300';el.classList.toggle('warn',v>250)}
+
+async function submitPost(){
+  var name=document.getElementById('plant-name').value.trim();
+  var age=document.getElementById('plant-age').value.trim();
+  var loc=document.getElementById('plant-location').value.trim();
+  var desc=document.getElementById('plant-desc').value.trim();
+  var cat=document.getElementById('plant-category').value;
+  if(!name){showToast('⚠️ Informe o nome da planta');return}
+  if(!age){showToast('⚠️ Informe a idade');return}
+  if(!loc){showToast('⚠️ Informe o local');return}
+  var btn=document.getElementById('btn-submit-post');btn.disabled=true;btn.textContent='Publicando...';
+  try{
+    // Compress image before saving to Firestore
+    var imgUrl=null;
+    if(imageDataUrl){
+      imgUrl=await compressImage(imageDataUrl,800,0.7);
+    }
+    await addDoc(collection(db,'posts'),{authorUid:currentUser.uid,authorName:currentUser.name,authorAvatar:currentUser.avatar,plantName:name,age:age,location:loc,desc:desc,category:cat,image:imgUrl,likes:[],comments:[],createdAt:serverTimestamp()});
+    closePostModal();resetPostForm();showToast('🌿 Planta publicada!');checkAchievements();renderRanking();
+  }catch(e){showToast('⚠️ Erro ao publicar: '+e.message)}
+  btn.disabled=false;btn.textContent='Publicar 🌿';
+}
+function resetPostForm(){document.getElementById('plant-name').value='';document.getElementById('plant-age').value='';document.getElementById('plant-location').value='';document.getElementById('plant-desc').value='';document.getElementById('plant-category').value='all';updateCharCount();removeImage()}
+
+// ── FEED (realtime) ──
+function startFeedListener(){
+  if(unsubPosts){unsubPosts();unsubPosts=null}
+  var q=query(collection(db,'posts'),orderBy('createdAt','desc'));
+  unsubPosts=onSnapshot(q,function(snap){
+    var posts=[];snap.forEach(function(d){posts.push(Object.assign({id:d.id},d.data()))});
+    allPostsCache=posts;
+    renderFeed(posts);renderRanking();
+  });
+}
+
+function renderFeed(posts){
+  var list=document.getElementById('feed-list');
+  renderFeedInto(list,posts,true);
+}
+
+function renderFeedInto(list,posts,doFilter){
+  if(!posts)return;
+  var filtered=posts;
+  if(doFilter){
+    var query2=(document.getElementById('search-input').value||'').trim().toLowerCase();
+    if(query2)filtered=filtered.filter(function(p){return(p.plantName||'').toLowerCase().indexOf(query2)!==-1||(p.location||'').toLowerCase().indexOf(query2)!==-1||(p.authorName||'').toLowerCase().indexOf(query2)!==-1});
+    var countEl=document.getElementById('feed-count');
+    if(posts.length>0){countEl.textContent=query2?filtered.length+' resultado'+(filtered.length!==1?'s':''):posts.length+' planta'+(posts.length!==1?'s':'')+' no jardim';countEl.style.display='inline-block'}else countEl.style.display='none';
+    if(filtered.length===0){list.innerHTML=query2?'<div class="empty-state"><span class="big-icon">🔍</span><h3>Nenhum resultado</h3><p>Tente outro filtro.</p></div>':'<div class="empty-state"><span class="big-icon">🪴</span><h3>O jardim está vazio</h3><p>Seja o primeiro a publicar!</p></div>';return}
+  } else {
+    if(filtered.length===0){list.innerHTML='<div class="empty-state"><span class="big-icon">🪴</span><h3>Sem plantas aqui</h3><p>Seja o primeiro nessa categoria!</p></div>';return}
+  }
+  var saved=getSaved(),html='';
+  for(var i=0;i<filtered.length;i++){
+    var p=filtered[i];
+    var liked=p.likes&&p.likes.indexOf(currentUser.uid)!==-1;
+    var lc=p.likes?p.likes.length:0,cc=p.comments?p.comments.length:0;
+    var isSaved=saved.indexOf(p.id)!==-1,isOwner=p.authorUid===currentUser.uid;
+    var timeAgo=p.createdAt?fmtTime(p.createdAt):'';var tip=getCareTip(p.plantName||'');
+    var milestone=lc>=20?'<div class="card-milestone">🔥 Trending</div>':lc>=10?'<div class="card-milestone">⭐ Popular</div>':'';
+    var imgBlock=p.image?'<div class="card-img-wrap" data-post-id="'+p.id+'" ondblclick="window._dblLike(\''+p.id+'\')"><img src="'+p.image+'" alt="'+esc(p.plantName||'')+'" loading="lazy"><div class="heart-overlay" id="hover-'+p.id+'"><span class="heart-overlay-icon">❤️</span></div></div>':'<div class="card-no-photo">🌿<span>Sem foto</span></div>';
+    var hp='<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>';
+    var commHtml='';
+    if(cc>0){var cmts=p.comments,sf=cc>2?cc-2:0;commHtml='<div class="comments-preview">';if(cc>2)commHtml+='<span class="see-all-comments" data-post-id="'+p.id+'">Ver todos os '+cc+' comentários</span>';for(var j=sf;j<cmts.length;j++){var c=cmts[j];var cd=c.authorUid===currentUser.uid?'<button class="comment-delete" data-post-id="'+p.id+'" data-comment-idx="'+j+'">✕</button>':'';commHtml+='<div class="comment-item"><div class="comment-avatar">'+esc(c.authorAvatar||'?')+'</div><div class="comment-body"><div class="comment-text"><strong>'+esc(c.authorName||'')+'</strong>'+esc(c.text||'')+'</div><div class="comment-time">'+esc(c.time||'')+'</div></div>'+cd+'</div>'}commHtml+='</div>'}
+    var myAv=currentUser.avatar||'?';
+    var delBtn=isOwner?'<button class="delete-btn-insta" data-post-id="'+p.id+'" title="Excluir"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>':'';
+    html+='<article class="plant-card" style="animation-delay:'+(i*55)+'ms">'
+      +'<div class="card-header"><div class="owner-avatar">'+esc(p.authorAvatar||'?')+'</div><div class="card-header-info">'+milestone+'<div class="owner-name">'+esc(p.authorName||'')+'</div><div class="owner-sub">'+esc(p.location||'')+' · '+timeAgo+'</div></div>'+(isOwner?'<button class="card-menu-btn" data-post-id="'+p.id+'" title="Excluir">⋯</button>':'')+'</div>'
+      +imgBlock
+      +'<div class="card-actions-row">'
+      +'<div class="like-group"><button class="like-btn-insta'+(liked?' liked':'')+'" id="like-btn-'+p.id+'" data-post-id="'+p.id+'" aria-label="Curtir"><svg viewBox="0 0 24 24">'+hp+'</svg></button><span class="action-count'+(liked?' red':'')+'" id="like-count-'+p.id+'">'+lc+'</span></div>'
+      +'<div class="comment-group" style="margin-left:6px"><button class="comment-btn-insta" data-post-id="'+p.id+'" aria-label="Comentar"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button><span class="action-count" id="comment-count-'+p.id+'">'+cc+'</span></div>'
+      +'<div class="spacer"></div>'
+      +'<button class="save-btn'+(isSaved?' saved':'')+'" id="save-btn-'+p.id+'" data-post-id="'+p.id+'" aria-label="Salvar"><svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></button>'
+      +delBtn+'</div>'
+      +'<div class="card-meta"><div class="card-caption"><span class="cap-author">'+esc(p.authorName||'')+'</span>'+esc(p.plantName||'')+(p.desc?' — '+esc(p.desc):'')+'</div>'
+      +'<div class="plant-tags"><span class="plant-tag nm">🌿 '+esc(p.plantName||'')+'</span><span class="plant-tag age">🕰 '+esc(p.age||'')+'</span><span class="plant-tag loc">📍 '+esc(p.location||'')+'</span></div>'
+      +'<div class="care-tip"><span class="care-tip-icon">💡</span>'+esc(tip)+'</div></div>'
+      +commHtml
+      +'<div class="comment-input-row"><div class="comment-me-avatar">'+esc(myAv)+'</div><div class="comment-input-wrap"><input class="comment-field" data-post-id="'+p.id+'" placeholder="Adicione um comentário..." maxlength="200"><button class="comment-send" data-post-id="'+p.id+'" disabled>Publicar</button></div></div>'
+      +'<div class="card-post-time">'+timeAgo+'</div></article>';
+  }
+  list.innerHTML=html;
+  // Bind events via delegation
+  list.querySelectorAll('.like-btn-insta').forEach(function(btn){btn.addEventListener('click',function(){toggleLike(btn.getAttribute('data-post-id'))})});
+  list.querySelectorAll('.comment-btn-insta').forEach(function(btn){btn.addEventListener('click',function(){openCommentsSheet(btn.getAttribute('data-post-id'))})});
+  list.querySelectorAll('.save-btn').forEach(function(btn){btn.addEventListener('click',function(){toggleSave(btn.getAttribute('data-post-id'))})});
+  list.querySelectorAll('.delete-btn-insta,.card-menu-btn').forEach(function(btn){btn.addEventListener('click',function(){delPost(btn.getAttribute('data-post-id'))})});
+  list.querySelectorAll('.see-all-comments').forEach(function(el){el.addEventListener('click',function(){openCommentsSheet(el.getAttribute('data-post-id'))})});
+  list.querySelectorAll('.comment-field').forEach(function(inp){
+    inp.addEventListener('input',function(){var btn=inp.nextElementSibling;if(btn)btn.disabled=inp.value.trim().length===0});
+    inp.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submitInlineComment(inp.getAttribute('data-post-id'),inp)}});
+  });
+  list.querySelectorAll('.comment-send').forEach(function(btn){btn.addEventListener('click',function(){var inp=btn.previousElementSibling;submitInlineComment(btn.getAttribute('data-post-id'),inp)})});
+  list.querySelectorAll('.comment-delete').forEach(function(btn){btn.addEventListener('click',function(){deleteCommentByIdx(btn.getAttribute('data-post-id'),parseInt(btn.getAttribute('data-comment-idx')))})});
+  // Global dblLike helper
+  window._dblLike=function(postId){
+    var ov=document.getElementById('hover-'+postId);
+    if(ov){ov.classList.remove('pop');void ov.offsetWidth;ov.classList.add('pop');setTimeout(function(){if(ov)ov.classList.remove('pop')},750)}
+    toggleLike(postId,true);
+  };
+}
+
+// ── LIKE ──
+async function toggleLike(postId,onlyAdd){
+  var pRef=doc(db,'posts',postId);
+  var snap=await getDoc(pRef);if(!snap.exists())return;
+  var p=snap.data();var liked=(p.likes||[]).indexOf(currentUser.uid)!==-1;
+  if(onlyAdd&&liked)return;
+  if(liked){await updateDoc(pRef,{likes:arrayRemove(currentUser.uid)})}
+  else{await updateDoc(pRef,{likes:arrayUnion(currentUser.uid)});if(p.authorUid!==currentUser.uid)addNotif('like',p.authorUid,currentUser.name,p.plantName)}
+  // Update UI instantly
+  var newLiked=!liked,newCount=(p.likes||[]).length+(newLiked?1:-1);
+  var lb=document.getElementById('like-btn-'+postId),lct=document.getElementById('like-count-'+postId);
+  if(lb){lb.classList.toggle('liked',newLiked);if(newLiked){lb.classList.add('heart-burst');setTimeout(function(){if(lb)lb.classList.remove('heart-burst')},450)}}
+  if(lct){lct.textContent=newCount;lct.className='action-count'+(newLiked?' red':'')}
+  if(newLiked)checkAchievements();
+}
+
+// ── DELETE POST ──
+function delPost(postId){openConfirm({icon:'🗑️',title:'Excluir publicação?',msg:'Essa planta será removida permanentemente.',okLabel:'Excluir',onOk:async function(){await deleteDoc(doc(db,'posts',postId));showToast('🗑️ Publicação removida.');renderRanking()}})}
+
+// ── COMMENTS ──
+var csCurrentPost=null;
+function openCommentsSheet(postId){
+  csCurrentPost=postId;renderSheetComments(postId);
+  document.getElementById('cs-sheet').classList.add('open');
+  document.getElementById('cs-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+  setTimeout(function(){document.getElementById('cs-input').focus()},350);
+}
+function closeCommentsSheet(){document.getElementById('cs-sheet').classList.remove('open');document.getElementById('cs-overlay').classList.remove('open');document.body.style.overflow='';csCurrentPost=null;document.getElementById('cs-input').value='';document.getElementById('cs-send').disabled=true}
+async function renderSheetComments(postId){
+  var snap=await getDoc(doc(db,'posts',postId));
+  var list=document.getElementById('cs-list');
+  var comments=snap.exists()&&snap.data().comments?snap.data().comments:[];
+  if(comments.length===0){list.innerHTML='<div class="no-comments"><span>💬</span>Seja o primeiro a comentar!</div>';return}
+  var html='';
+  for(var j=0;j<comments.length;j++){
+    var c=comments[j];var isMe=c.authorUid===currentUser.uid;
+    var del=isMe?'<button class="cs-del" data-post-id="'+postId+'" data-idx="'+j+'">✕</button>':'';
+    html+='<div class="cs-item"><div class="cs-av">'+esc(c.authorAvatar||'?')+'</div><div class="cs-body"><div class="cs-name">'+esc(c.authorName||'')+'</div><div class="cs-text">'+esc(c.text||'')+'</div><div class="cs-time">'+esc(c.time||'')+'</div></div>'+del+'</div>';
+  }
+  list.innerHTML=html;list.scrollTop=list.scrollHeight;
+  list.querySelectorAll('.cs-del').forEach(function(btn){btn.addEventListener('click',function(){deleteCommentByIdx(btn.getAttribute('data-post-id'),parseInt(btn.getAttribute('data-idx')));renderSheetComments(postId)})});
+}
+async function submitSheetComment(){
+  var inp=document.getElementById('cs-input'),text=inp.value.trim();
+  if(!text||!csCurrentPost)return;
+  await addComment(csCurrentPost,text);
+  inp.value='';document.getElementById('cs-send').disabled=true;
+  renderSheetComments(csCurrentPost);
+}
+async function submitInlineComment(postId,inp){
+  var text=inp.value.trim();if(!text)return;
+  await addComment(postId,text);
+  inp.value='';var btn=inp.nextElementSibling;if(btn)btn.disabled=true;
+}
+async function addComment(postId,text){
+  var pRef=doc(db,'posts',postId);
+  var snap=await getDoc(pRef);if(!snap.exists())return;
+  var p=snap.data();
+  var newComment={authorUid:currentUser.uid,authorName:currentUser.name,authorAvatar:currentUser.avatar,text:text,time:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})};
+  var comments=p.comments||[];comments.push(newComment);
+  await updateDoc(pRef,{comments:comments});
+  if(p.authorUid!==currentUser.uid)addNotif('comment',p.authorUid,currentUser.name,p.plantName);
+  checkAchievements();
+}
+async function deleteCommentByIdx(postId,idx){
+  var pRef=doc(db,'posts',postId);
+  var snap=await getDoc(pRef);if(!snap.exists())return;
+  var comments=snap.data().comments||[];
+  comments.splice(idx,1);
+  await updateDoc(pRef,{comments:comments});
+  showToast('Comentário removido.');
+}
+
+// ── SAVED PANEL ──
+async function renderSavedPanel(){
+  var saved=getSaved();var el=document.getElementById('saved-content');if(!el)return;
+  if(saved.length===0){el.innerHTML='<div class="saved-empty"><span>🔖</span>Sem plantas salvas ainda.<br>Toque no 🔖 em qualquer post!</div>';return}
+  var html='<div class="saved-grid">';
+  for(var i=0;i<saved.length;i++){
+    try{var snap=await getDoc(doc(db,'posts',saved[i]));if(!snap.exists())continue;var p=snap.data();html+='<div class="saved-thumb">'+(p.image?'<img src="'+p.image+'" alt="">':'<span>🌿</span>')+'<div class="saved-thumb-name">'+esc(p.plantName||'')+'</div></div>'}catch(e){}
+  }
+  el.innerHTML=html+'</div>';
+}
+
+// ── COMPRESS IMAGE (free, no Storage needed) ──
+function compressImage(dataUrl, maxWidth, quality){
+  return new Promise(function(resolve){
+    var img=new Image();
+    img.onload=function(){
+      var canvas=document.createElement('canvas');
+      var w=img.width,h=img.height;
+      if(w>maxWidth){h=Math.round(h*maxWidth/w);w=maxWidth;}
+      canvas.width=w;canvas.height=h;
+      var ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0,w,h);
+      var result=canvas.toDataURL('image/jpeg',quality);
+      // If still too large (>700KB base64 ≈ ~500KB binary), compress more
+      if(result.length>700000){
+        canvas.width=Math.round(w*0.7);canvas.height=Math.round(h*0.7);
+        var ctx2=canvas.getContext('2d');ctx2.drawImage(img,0,0,canvas.width,canvas.height);
+        result=canvas.toDataURL('image/jpeg',0.5);
+      }
+      resolve(result);
+    };
+    img.src=dataUrl;
+  });
+}
+
+var exploreCat='all';
+var allPostsCache=[];
+
+// ── PAGE SWITCHING ──
+function switchPage(page){
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
+  document.querySelectorAll('.bnav-btn').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-page')===page)});
+  document.getElementById('page-'+page).classList.add('active');
+  if(page==='ranking')renderRanking();
+  if(page==='explore')renderExploreCounts();
+}
+
+// ── EXPLORE PAGE ──
+async function renderExploreCounts(){
+  if(allPostsCache.length===0){
+    var snap=await getDocs(query(collection(db,'posts'),orderBy('createdAt','desc')));
+    allPostsCache=[];snap.forEach(function(d){allPostsCache.push(Object.assign({id:d.id},d.data()))});
+  }
+  var cats=['all','suculenta','flor','arvore','vaso','erva','aquatica'];
+  cats.forEach(function(cat){
+    var el=document.getElementById('ecc-'+cat);if(!el)return;
+    var count=cat==='all'?allPostsCache.length:allPostsCache.filter(function(p){return p.category===cat}).length;
+    el.textContent=count+' planta'+(count!==1?'s':'');
+  });
+  renderExploreFeed();
+}
+function renderExploreFeed(){
+  var list=document.getElementById('explore-feed-list');if(!list)return;
+  var filtered=exploreCat==='all'?allPostsCache:allPostsCache.filter(function(p){return p.category===exploreCat});
+  if(filtered.length===0){list.innerHTML='<div class="empty-state"><span class="big-icon">🪴</span><h3>Sem plantas aqui</h3><p>Seja o primeiro nessa categoria!</p></div>';return}
+  renderFeedInto(list,filtered);
+}
+
+// ── SETUP LISTENERS ──
+function setupListeners(){
+  document.getElementById('tab-btn-login').addEventListener('click',function(){switchTab('login')});
+  document.getElementById('tab-btn-register').addEventListener('click',function(){switchTab('register')});
+  document.getElementById('btn-login').addEventListener('click',doLogin);
+  document.getElementById('btn-register').addEventListener('click',doRegister);
+  document.querySelectorAll('.pass-toggle').forEach(function(btn){btn.addEventListener('click',function(){togglePass(btn.getAttribute('data-target'),btn)})});
+  document.getElementById('btn-open-post').addEventListener('click',openPostModal);
+  document.getElementById('btn-hamburger').addEventListener('click',openSidebar);
+  document.getElementById('sidebar-close').addEventListener('click',closeSidebar);
+  document.getElementById('sidebar-overlay').addEventListener('click',closeSidebar);
+  document.getElementById('btn-logout').addEventListener('click',confirmLogout);
+  document.querySelectorAll('.sidebar-tab').forEach(function(tab){
+    tab.addEventListener('click',function(){
+      document.querySelectorAll('.sidebar-tab').forEach(function(t){t.classList.remove('active')});
+      document.querySelectorAll('.sidebar-panel').forEach(function(p){p.classList.remove('active')});
+      tab.classList.add('active');document.getElementById(tab.getAttribute('data-panel')).classList.add('active');
+      if(tab.getAttribute('data-panel')==='panel-saved')renderSavedPanel();
+    });
+  });
+  document.getElementById('btn-notif').addEventListener('click',function(){var o=document.getElementById('np-overlay');if(o.classList.contains('open')){o.classList.remove('open')}else{renderNotifPanel();o.classList.add('open')}});
+  document.getElementById('np-overlay').addEventListener('click',function(e){if(e.target===document.getElementById('np-overlay'))document.getElementById('np-overlay').classList.remove('open')});
+  document.getElementById('np-clear').addEventListener('click',async function(){if(!currentUser)return;var snap=await getDocs(query(collection(db,'notifs'),where('toUid','==',currentUser.uid)));snap.forEach(function(d){deleteDoc(doc(db,'notifs',d.id))});document.getElementById('np-list').innerHTML='<div class="np-empty">Sem notificações ainda.</div>';updateNotifBadge()});
+  // (category buttons now live in explore page — handled by explore-grid delegation above)
+  document.getElementById('modal-close-btn').addEventListener('click',closePostModal);
+  document.getElementById('modal-cancel-btn').addEventListener('click',closePostModal);
+  document.getElementById('post-modal').addEventListener('click',function(e){if(e.target===document.getElementById('post-modal'))closePostModal()});
+  document.getElementById('btn-submit-post').addEventListener('click',submitPost);
+  document.getElementById('plant-desc').addEventListener('input',updateCharCount);
+  document.getElementById('file-input-gallery').addEventListener('change',function(){if(this.files&&this.files.length>0)loadImageFile(this.files[0])});
+  document.getElementById('btn-rm-img').addEventListener('click',function(e){e.preventDefault();e.stopPropagation();removeImage()});
+  var ua=document.getElementById('upload-area');
+  ua.addEventListener('dragover',function(e){e.preventDefault();ua.classList.add('drag-over')});
+  ua.addEventListener('dragleave',function(){ua.classList.remove('drag-over')});
+  ua.addEventListener('drop',function(e){e.preventDefault();ua.classList.remove('drag-over');var f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))loadImageFile(f);else showToast('⚠️ Apenas imagens')});
+  document.getElementById('story-modal-close').addEventListener('click',closeStoryModal);
+  document.getElementById('story-cancel-btn').addEventListener('click',closeStoryModal);
+  document.getElementById('story-modal').addEventListener('click',function(e){if(e.target===document.getElementById('story-modal'))closeStoryModal()});
+  document.getElementById('btn-submit-story').addEventListener('click',submitStory);
+  document.getElementById('story-file-input').addEventListener('change',function(){if(this.files&&this.files.length>0){var f=this.files[0];if(f.size>5*1024*1024){showToast('⚠️ Máx 5MB');return}var reader=new FileReader();reader.onload=function(ev){storyImgData=ev.target.result;var p=document.getElementById('story-preview');p.src=storyImgData;p.style.display='block';document.getElementById('story-placeholder').style.display='none'};reader.readAsDataURL(f)}});
+  // Bottom nav
+  document.querySelectorAll('.bnav-btn').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var page=btn.getAttribute('data-page');
+      switchPage(page);
+    });
+  });
+  // Explore category cards
+  document.getElementById('explore-grid').addEventListener('click',function(e){
+    var card=e.target.closest('.explore-cat-card');if(!card)return;
+    document.querySelectorAll('.explore-cat-card').forEach(function(c){c.classList.remove('active')});
+    card.classList.add('active');
+    exploreCat=card.getAttribute('data-cat');
+    renderExploreFeed();
+  });
+  document.getElementById('sv-tap-l').addEventListener('click',function(){
+    // Go to previous story; if at start of current user's group, jump to start of previous user's group
+    var curGroup=null,curGroupIdx=0;
+    for(var g=0;g<viewerUserGroups.length;g++){
+      var grp=viewerUserGroups[g];
+      if(viewerIdx>=grp.start&&viewerIdx<grp.start+grp.count){curGroup=grp;curGroupIdx=g;break}
+    }
+    if(curGroup&&viewerIdx>curGroup.start){showStoryAt(viewerIdx-1)}
+    else if(curGroupIdx>0){showStoryAt(viewerUserGroups[curGroupIdx-1].start)}
+    else{showStoryAt(viewerIdx-1)} // will close if <0
+  });
+  document.getElementById('sv-tap-r').addEventListener('click',function(){
+    // Go to next story; if at end of current user's group, jump to next user's group start
+    var curGroup=null,curGroupIdx=0;
+    for(var g=0;g<viewerUserGroups.length;g++){
+      var grp=viewerUserGroups[g];
+      if(viewerIdx>=grp.start&&viewerIdx<grp.start+grp.count){curGroup=grp;curGroupIdx=g;break}
+    }
+    if(curGroup&&viewerIdx<curGroup.start+curGroup.count-1){showStoryAt(viewerIdx+1)}
+    else if(curGroupIdx<viewerUserGroups.length-1){showStoryAt(viewerUserGroups[curGroupIdx+1].start)}
+    else{closeStoryViewer()}
+  });
+  document.getElementById('sv-close').addEventListener('click',closeStoryViewer);
+  document.getElementById('search-input').addEventListener('input',function(){renderFeed(allPostsCache)});
+  document.getElementById('cs-close').addEventListener('click',closeCommentsSheet);
+  document.getElementById('cs-overlay').addEventListener('click',closeCommentsSheet);
+  var csi=document.getElementById('cs-input'),css=document.getElementById('cs-send');
+  csi.addEventListener('input',function(){css.disabled=csi.value.trim().length===0});
+  csi.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submitSheetComment()}});
+  css.addEventListener('click',submitSheetComment);
+  document.getElementById('confirm-ok').addEventListener('click',function(){var cb=confirmCallback;closeConfirm();if(cb)cb()});
+  document.getElementById('confirm-cancel').addEventListener('click',closeConfirm);
+  document.getElementById('confirm-overlay').addEventListener('click',function(e){if(e.target===document.getElementById('confirm-overlay'))closeConfirm()});
+  document.addEventListener('keydown',function(e){if(e.key!=='Enter')return;var as=document.getElementById('auth-screen');if(as.classList.contains('hidden'))return;if(document.getElementById('tab-login').style.display!=='none')doLogin();else doRegister()});
+}
+
+function togglePass(id,btn){
+  var inp=document.getElementById(id),hidden=inp.type==='password';inp.type=hidden?'text':'password';
+  var svgId=id==='login-pass'?'eye-login':'eye-register',svg=document.getElementById(svgId);if(!svg)return;
+  if(hidden)svg.innerHTML='<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+  else svg.innerHTML='<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+}
+
+window.addEventListener('load', setupListeners);
+</script>
+</body></html>
